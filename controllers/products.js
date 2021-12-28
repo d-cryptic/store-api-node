@@ -5,8 +5,10 @@ const getAllProductsStatic = async (req, res) => {
   const products = await Product.find({
     // name: "vase table",
     // name: "albany sectional",
-    name: { $regex: search, $options: "i" },
-  });
+    // name: { $regex: search, $options: "i" },
+  })
+    .sort("-name price")
+    .select("name price");
   //   throw new Error("testing async errors");
   res.status(200).json({ products, nbHits: products.length });
 };
@@ -14,7 +16,7 @@ const getAllProductsStatic = async (req, res) => {
 const getAllProducts = async (req, res) => {
   //   console.log(req.query);
 
-  const { featured, company, name } = req.query;
+  const { featured, company, name, sort, fields } = req.query;
   const queryObject = {};
   if (featured) {
     queryObject.featured = featured === "true" ? true : false;
@@ -29,7 +31,23 @@ const getAllProducts = async (req, res) => {
   }
 
   console.log(queryObject);
-  const products = await Product.find(queryObject);
+  let result = Product.find(queryObject);
+
+  if (sort) {
+    // products = products.sort();
+    // console.log(sort);
+    const sortList = sort.split(",").join(" ");
+    result = result.sort(sortList);
+  } else {
+    result = result.sort("createdAt");
+  }
+
+  if (fields) {
+    const fieldsList = fields.split(",").join(" ");
+    result = result.select(fieldsList);
+  }
+
+  const products = await result;
   res.status(200).json({ products, nbHits: products.length });
 };
 
